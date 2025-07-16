@@ -1,0 +1,12 @@
+com\dianxing\pojo\User.class
+com\dianxing\DemoApplication.class
+com\dianxing\pojo\Student.class
+com\dianxing\mapper\LoginMapper.class
+com\dianxing\service\LoginService.class
+com\dianxing\controller\LoginController.class
+com\dianxing\controller\StudentController.class
+com\dianxing\mapper\StudentMapper.class
+com\dianxing\service\impl\LoginImpl.class
+com\dianxing\pojo\Result.class
+com\dianxing\service\StudentService.class
+com\dianxing\service\impl\StudentImpl.class
