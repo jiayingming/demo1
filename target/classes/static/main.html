@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>学生信息管理系统</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    .search-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .search-group label {
+      white-space: nowrap;
+    }
+    .search-input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      min-width: 150px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+      white-space: nowrap;
+    }
+    .btn-add {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .btn-search {
+      background-color: #2196F3;
+      color: white;
+    }
+    .btn-reset {
+      background-color: #6c757d;
+      color: white;
+    }
+    .btn-edit {
+      background-color: #2196F3;
+      color: white;
+    }
+    .btn-delete {
+      background-color: #f44336;
+      color: white;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 50%;
+      border-radius: 5px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .form-actions {
+      text-align: right;
+      margin-top: 20px;
+    }
+    .btn-submit {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .btn-cancel {
+      background-color: #ccc;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>学生信息管理系统</h1>
+
+  <div class="action-bar">
+    <div class="search-group">
+      <label>学号：</label>
+      <input type="text" id="studentIdSearch" class="search-input" placeholder="完整学号">
+    </div>
+    <div class="search-group">
+      <label>姓名：</label>
+      <input type="text" id="nameSearch" class="search-input" placeholder="部分姓名">
+    </div>
+    <button class="btn btn-search" onclick="searchStudents()">查询</button>
+    <button class="btn btn-reset" onclick="resetSearch()">重置</button>
+    <button class="btn btn-add" onclick="showAddForm()">添加学生</button>
+  </div>
+
+  <table id="studentTable">
+    <thead>
+    <tr>
+      <th>学号</th>
+      <th>姓名</th>
+      <th>年龄</th>
+      <th>性别</th>
+      <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- 数据将通过JavaScript动态填充 -->
+    </tbody>
+  </table>
+</div>
+
+<!-- 添加/编辑表单模态框 -->
+<div id="studentFormModal" class="modal">
+  <div class="modal-content">
+    <h2 id="formTitle">添加学生</h2>
+    <form>
+      <input type="hidden" id="studentId">
+      <div class="form-group">
+        <label for="studentNumber">学号</label>
+        <input type="text" id="studentNumber" required>
+      </div>
+      <div class="form-group">
+        <label for="studentName">姓名</label>
+        <input type="text" id="studentName" required>
+      </div>
+      <div class="form-group">
+        <label for="studentAge">年龄</label>
+        <input type="number" id="studentAge" required>
+      </div>
+      <div class="form-group">
+        <label for="studentGender">性别</label>
+        <select id="studentGender" required>
+          <option value="">请选择性别</option>
+          <option value="男">男</option>
+          <option value="女">女</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-cancel" onclick="hideFormModal()">取消</button>
+        <button type="button" class="btn btn-submit" onclick="saveStudent()">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // 全局变量
+  let isEditMode = false;
+  let currentStudentId = null;
+
+  // 页面加载时获取学生数据
+  document.addEventListener('DOMContentLoaded', function() {
+    loadStudents();
+  });
+
+  // 加载学生数据
+  function loadStudents() {
+    fetch('api/user')
+            .then(response => response.json())
+            .then(data => {
+              if(data.code === 1) {
+                renderStudents(data.data);
+              }
+            })
+            .catch(error => {
+              console.error('获取数据失败:', error);
+              alert('获取数据失败，请刷新页面重试');
+            });
+  }
+
+  // 查询学生
+  function searchStudents() {
+    const studentId = document.getElementById('studentIdSearch').value.trim();
+    const name = document.getElementById('nameSearch').value.trim();
+
+    // 构建查询参数
+    const params = new URLSearchParams();
+    if (studentId) params.append('studentId', studentId);
+    if (name) params.append('name', name);
+
+    // 如果没有输入任何查询条件，则加载全部学生
+    if (!studentId && !name) {
+      loadStudents();
+      return;
+    }
+
+    fetch(`api/user/search?${params.toString()}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('网络响应不正常');
+              }
+              return response.json();
+            })
+            .then(data => {
+              if(data.code === 1) {
+                renderStudents(data.data);
+              } else {
+                alert('查询失败: ' + data.msg);
+              }
+            })
+            .catch(error => {
+              console.error('查询失败:', error);
+              alert('查询失败: ' + error.message);
+            });
+  }
+
+  // 重置查询
+  function resetSearch() {
+    document.getElementById('studentIdSearch').value = '';
+    document.getElementById('nameSearch').value = '';
+    loadStudents();
+  }
+
+  // 渲染学生表格
+  function renderStudents(students) {
+    const tbody = document.querySelector('#studentTable tbody');
+    tbody.innerHTML = '';
+
+    if(students.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5">没有找到学生数据</td></tr>';
+      return;
+    }
+
+    students.forEach(student => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+                <td>${student.studentId}</td>
+                <td>${student.name}</td>
+                <td>${student.age}</td>
+                <td>${student.gender}</td>
+                <td>
+                    <button class="btn btn-edit" onclick="showEditForm(${student.id})">编辑</button>
+                    <button class="btn btn-delete" onclick="deleteStudent(${student.id})">删除</button>
+                </td>
+            `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // 显示添加表单
+  function showAddForm() {
+    isEditMode = false;
+    currentStudentId = null;
+    document.getElementById('formTitle').textContent = '添加学生';
+    document.getElementById('studentNumber').value = '';
+    document.getElementById('studentName').value = '';
+    document.getElementById('studentAge').value = '';
+    document.getElementById('studentGender').value = '';
+    document.getElementById('studentFormModal').style.display = 'block';
+  }
+
+  // 显示编辑表单
+  function showEditForm(id) {
+    isEditMode = true;
+    currentStudentId = id;
+    document.getElementById('formTitle').textContent = '编辑学生';
+
+    fetch(`api/user/${id}`)
+            .then(response => response.json())
+            .then(data => {
+              if(data.code === 1 && data.data) {
+                const student = data.data;
+                document.getElementById('studentId').value = student.id;
+                document.getElementById('studentNumber').value = student.studentId;
+                document.getElementById('studentName').value = student.name;
+                document.getElementById('studentAge').value = student.age;
+                document.getElementById('studentGender').value = student.gender;
+                document.getElementById('studentFormModal').style.display = 'block';
+              }
+            })
+            .catch(error => {
+              console.error('获取学生信息失败:', error);
+              alert('获取学生信息失败');
+            });
+  }
+
+  // 隐藏表单模态框
+  function hideFormModal() {
+    document.getElementById('studentFormModal').style.display = 'none';
+  }
+
+  // 保存学生信息
+  function saveStudent() {
+    const student = {
+      id: currentStudentId,
+      studentId: document.getElementById('studentNumber').value.trim(),
+      name: document.getElementById('studentName').value.trim(),
+      age: parseInt(document.getElementById('studentAge').value),
+      gender: document.getElementById('studentGender').value
+    };
+
+    // 简单验证
+    if(!student.studentId || !student.name || !student.age || !student.gender) {
+      alert('请填写完整的学生信息');
+      return;
+    }
+
+    const url = 'api/user';
+    const method = isEditMode ? 'PUT' : 'POST';
+
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(student)
+    })
+            .then(response => response.json())
+            .then(data => {
+              if(data.code === 1) {
+                alert(isEditMode ? '学生信息更新成功' : '学生添加成功');
+                hideFormModal();
+                loadStudents(); // 刷新列表
+              } else {
+                alert('操作失败: ' + (data.msg || '未知错误'));
+              }
+            })
+            .catch(error => {
+              console.error('操作失败:', error);
+              alert('操作失败: ' + error.message);
+            });
+  }
+
+  // 删除学生
+  function deleteStudent(id) {
+    if(confirm('确定要删除这个学生吗？')) {
+      fetch(`api/user/${id}`, {
+        method: 'DELETE'
+      })
+              .then(response => response.json())
+              .then(data => {
+                if(data.code === 1) {
+                  alert('学生删除成功');
+                  loadStudents(); // 刷新列表
+                } else {
+                  alert('删除失败: ' + (data.msg || '未知错误'));
+                }
+              })
+              .catch(error => {
+                console.error('删除失败:', error);
+                alert('删除失败: ' + error.message);
+              });
+    }
+  }
+</script>
+</body>
+</html>
