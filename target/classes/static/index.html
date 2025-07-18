@@ -40,6 +40,19 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
+        .captcha-container {
+            display: flex;
+            gap: 10px;
+        }
+        .captcha-container input {
+            flex: 1;
+        }
+        .captcha-image {
+            height: 40px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
         .btn-login {
             width: 100%;
             padding: 12px;
@@ -72,18 +85,31 @@
             <label for="password">密码</label>
             <input type="password" id="password" required>
         </div>
+        <div class="form-group">
+            <label for="captcha">验证码</label>
+            <div class="captcha-container">
+                <input type="text" id="captcha" required>
+                <img src="/api/captcha/image" id="captchaImage" class="captcha-image" title="点击刷新验证码">
+            </div>
+        </div>
         <button type="button" class="btn-login" onclick="login()">登录</button>
         <div id="errorMessage" class="error-message"></div>
     </form>
 </div>
 
 <script>
+    // 刷新验证码
+    document.getElementById('captchaImage').onclick = function() {
+        this.src = "/api/captcha/image?" + new Date().getTime();
+    };
+
     function login() {
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
+        const captcha = document.getElementById('captcha').value.trim();
 
-        if (!username || !password) {
-            showError('请输入用户名和密码');
+        if (!username || !password || !captcha) {
+            showError('请输入用户名、密码和验证码');
             return;
         }
 
@@ -94,7 +120,8 @@
             },
             body: JSON.stringify({
                 username: username,
-                password: password
+                password: password,
+                captcha: captcha
             })
         })
             .then(response => {
@@ -108,11 +135,15 @@
                     window.location.href = "/main.html";
                 } else {
                     showError(data.msg || '登录失败');
+                    // 登录失败时刷新验证码
+                    document.getElementById('captchaImage').click();
                 }
             })
             .catch(error => {
                 console.error('登录失败:', error);
                 showError('登录失败: ' + error.message);
+                // 出错时刷新验证码
+                document.getElementById('captchaImage').click();
             });
     }
 
@@ -122,6 +153,11 @@
 
     // 按Enter键登录
     document.getElementById('password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            login();
+        }
+    });
+    document.getElementById('captcha').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             login();
         }
